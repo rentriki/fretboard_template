@@ -1,9 +1,9 @@
 import cairo 
 
-DPI = 150
+DPI = 107
 EDO = 19
 FRETBOARD_LENGTH = 18 + (3/8)
-SCALE_LENGTH = 25
+SCALE_LENGTH = 24.75
 
 def in2cm(inches): 
     return 2.54 * inches
@@ -21,9 +21,9 @@ def all_frets(fretboard_len=FRETBOARD_LENGTH, **kwargs):
 
 def write_frets(context, frets, line_len=DPI):
     for i, fret in enumerate(frets):
-        context.move_to(0, int(fret*DPI))
-        context.line_to(line_len, int(fret*DPI))
-        context.move_to(line_len+20, int(fret*DPI)+20)
+        context.move_to(700, int(fret*DPI))
+        context.line_to(700-line_len, int(fret*DPI))
+        context.move_to(700-(line_len+20), int(fret*DPI)+20)
         context.show_text(str(i))
 
 def print_frets(fretboard_len=FRETBOARD_LENGTH, 
@@ -36,7 +36,7 @@ def print_frets(fretboard_len=FRETBOARD_LENGTH,
         context = cairo.Context(surface)
         context.set_font_size(30)
 
-        context.set_line_width(3)
+        context.set_line_width(1)
         context.set_source_rgb(50, 0, 0)
         twelve_edo_frets = all_frets(fretboard_len=fretboard_len,
                                      scale_len=scale_len,
@@ -44,7 +44,17 @@ def print_frets(fretboard_len=FRETBOARD_LENGTH,
         write_frets(context, twelve_edo_frets, line_len=DPI//2)
         context.stroke()
 
-        context.set_line_width(5)
+        context.set_line_width(1)
+        context.set_source_rgb(0, 255, 0)
+        context.move_to(0, 20)
+        context.line_to(100, 20)
+        context.move_to(0, 20+int(DPI))
+        context.line_to(100, 20+int(DPI))
+        context.move_to(140, 40+int(DPI))
+        context.show_text(f'1 inch = {DPI}px')
+        context.stroke()
+        
+        context.set_line_width(2)
         context.set_source_rgb(0, 0, 0)
         target_frets = all_frets(fretboard_len=fretboard_len,
                                  scale_len=scale_len,
