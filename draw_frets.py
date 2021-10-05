@@ -1,9 +1,9 @@
 import cairo 
 
-DPI = 107
-EDO = 19
-FRETBOARD_LENGTH = 18 + (3/8)
-SCALE_LENGTH = 24.75
+DPI = 108
+EDO = 22
+FRETBOARD_LENGTH = 25
+SCALE_LENGTH = 34
 
 def in2cm(inches): 
     return 2.54 * inches
@@ -28,7 +28,7 @@ def write_frets(context, frets, line_len=DPI):
 
 def print_frets(fretboard_len=FRETBOARD_LENGTH, 
                 scale_len=SCALE_LENGTH, tet_num=EDO,
-                outfilename="19edo.svg", 
+                outfilename=f"{EDO}edo.svg", 
                 width=8.5*DPI, height=FRETBOARD_LENGTH*DPI):
     
     with cairo.SVGSurface(outfilename, width, height) as surface:
@@ -41,7 +41,7 @@ def print_frets(fretboard_len=FRETBOARD_LENGTH,
         twelve_edo_frets = all_frets(fretboard_len=fretboard_len,
                                      scale_len=scale_len,
                                      tet_num=12)
-        write_frets(context, twelve_edo_frets, line_len=DPI//2)
+        write_frets(context, twelve_edo_frets, line_len=DPI*2)
         context.stroke()
 
         context.set_line_width(1)
@@ -59,7 +59,7 @@ def print_frets(fretboard_len=FRETBOARD_LENGTH,
         target_frets = all_frets(fretboard_len=fretboard_len,
                                  scale_len=scale_len,
                                  tet_num=tet_num)
-        write_frets(context, target_frets, line_len=DPI)
+        write_frets(context, target_frets, line_len=DPI*3)
         context.stroke()
     
     print(f"Image saved as {outfilename}.")
