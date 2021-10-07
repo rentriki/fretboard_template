@@ -53,17 +53,36 @@ def print_frets(config, outfilename):
         
         context = cairo.Context(surface)
 
+        # center line
         context.set_line_width(1)
+        context.set_source_rgb(0, 0, 255)
+        context.move_to(CENTER_X, MIN_Y)
+        context.line_to(CENTER_X, MAX_Y)
+        context.stroke()
+
+        # one inch
+        context.set_line_width(3)
         context.set_source_rgb(0, 255, 0)
         context.move_to(MIN_X, MIN_Y)
         context.line_to(MIN_X+(DPI/4), MIN_Y)
         context.move_to(MIN_X, MIN_Y+DPI)
         context.line_to(MIN_X+(DPI/4), MIN_Y+DPI)
-        context.move_to(MIN_X, DPI)
-        context.set_font_size(10)
+        context.move_to(MIN_X, MIN_Y+(DPI/2))
+        context.set_font_size(14)
         context.show_text(f'1 inch = {DPI}px')
         context.stroke()
 
+        # config params
+        context.set_source_rgb(0, 0, 0)
+        context.move_to(MIN_X, MIN_Y+(DPI*1.5))
+        context.show_text(f'{config.edo}EDO')
+        context.move_to(MIN_X, MIN_Y+(DPI*1.75))
+        context.show_text(f'{config.fretboard_length}" fretboard')
+        context.move_to(MIN_X, MIN_Y+(DPI*2))
+        context.show_text(f'{config.scale_length}" scale length')
+        context.stroke()
+
+        # 12edo frets
         context.set_line_width(1)
         context.set_source_rgb(50, 0, 0)
         context.set_font_size(26)
@@ -72,6 +91,7 @@ def print_frets(config, outfilename):
         write_frets(context, all_frets(twelve_edo_config), DPI*2)
         context.stroke()
         
+        # target frets
         context.set_line_width(2)
         context.set_source_rgb(0, 0, 0)
         target_frets = all_frets(config)
