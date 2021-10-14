@@ -40,12 +40,26 @@ def all_frets(config):
         fret = fret_spacing(i, config)
 
 def write_frets(context, frets, line_length):
-    for i, fret in enumerate(frets):
-        context.move_to(CENTER_X-(line_length/2), MIN_Y+fret*DPI)
-        context.line_to(CENTER_X+(line_length/2), MIN_Y+fret*DPI)
+    for (fret_num, y) in frets:
+        context.move_to(CENTER_X-(line_length/2), MIN_Y+y*DPI)
+        context.line_to(CENTER_X+(line_length/2), MIN_Y+y*DPI)
         context.move_to(CENTER_X-(line_length/2)-(DPI/4), 
-                        MIN_Y+(fret*DPI)+(DPI/4))
-        context.show_text(str(i))
+                        MIN_Y+(y*DPI)+(DPI/4))
+        context.show_text(str(fret_num))
+
+def paginate_frets(target, baseline):
+    target, baseline = map(lambda x: list(enumerate(x)), [target, baseline])
+    while len(target) > 1:
+        i, j = 0, 0
+        while (i < len(target)) and (target[i][1]*DPI < MAX_Y):
+            i += 1
+        while (j < len(baseline)) and baseline[j][1]*DPI < MAX_Y:
+            j += 1
+        yield (target[:i], baseline[:j])
+        snip = target[i-1][1]
+        target = [[fret_num, y-snip] for fret_num, y in target[i-1:]]
+        baseline = [[fret_num, y-snip] for fret_num, y in baseline 
+                                       if y-snip > 0]
 
 def write_boilerplate(config, context):
 
@@ -79,39 +93,50 @@ def write_boilerplate(config, context):
     context.stroke()
 
 
-def print_frets(config, outfilename):
+def print_frets(config, outdir):
     
-    with cairo.SVGSurface(outfilename, WIDTH, HEIGHT) as surface:
-        
-        context = cairo.Context(surface)
-
-        write_boilerplate(config, context)
-
-        # 12edo frets
-        context.set_line_width(1)
-        context.set_source_rgb(50, 0, 0)
-        context.set_font_size(26)
-        twelve_edo_config = FretboardConfig(12, config.fretboard_length,
-                                                config.scale_length)
-        write_frets(context, all_frets(twelve_edo_config), DPI*2)
-        context.stroke()
-        
-        # target frets
-        context.set_line_width(2)
-        context.set_source_rgb(0, 0, 0)
-        target_frets = all_frets(config)
-        write_frets(context, target_frets, DPI*3)
-        context.stroke()
+    twelve_edo_config = FretboardConfig(12, config.fretboard_length,
+                                            config.scale_length)
+    twedo_frets = all_frets(twelve_edo_config)
+    target_frets = all_frets(config)
     
-    print(f"Image saved as {outfilename}.")
+    for (page_num, (target, baseline)) in enumerate(paginate_frets(target_frets, 
+                                                    twedo_frets), start=1):
+
+        outfilename = f"{outdir}/page{page_num}.svg"
+        
+        with cairo.SVGSurface(outfilename, WIDTH, HEIGHT) as surface:
+            
+            context = cairo.Context(surface)
+            write_boilerplate(config, context)
+            context.set_font_size(26)
+
+            # 12edo frets
+            context.set_line_width(1)
+            context.set_source_rgb(50, 0, 0)
+            write_frets(context, baseline, DPI*2)
+            context.stroke()
+            
+            # target frets
+            context.set_line_width(2)
+            context.set_source_rgb(0, 0, 0)
+            write_frets(context, target, DPI*3)
+            context.stroke()
+    
+    print(f"Images saved in ./{outdir}.")
 
 if __name__ == '__main__':
 
-    import argparse
+    import argparse, os, shutil
 
     parser = argparse.ArgumentParser(description='Draw a fretboard.')
     parser.add_argument('config_filename')
     args = parser.parse_args()
 
-    outfilename = os.path.basename(args.config_filename).split('.')[0] + '.svg'
-    print_frets(read_config(args.config_filename), outfilename)
+    outdir = os.path.basename(args.config_filename).split('.')[0]
+    config = read_config(args.config_filename)
+
+    shutil.rmtree(outdir, ignore_errors=True)
+    os.mkdir(outdir)
+
+    print_frets(config, outdir)
