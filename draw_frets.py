@@ -47,40 +47,45 @@ def write_frets(context, frets, line_length):
                         MIN_Y+(fret*DPI)+(DPI/4))
         context.show_text(str(i))
 
+def write_boilerplate(config, context):
+
+    # center line
+    context.set_line_width(1)
+    context.set_source_rgb(0, 0, 255)
+    context.move_to(CENTER_X, MIN_Y)
+    context.line_to(CENTER_X, MAX_Y)
+    context.stroke()
+
+    # one inch
+    context.set_line_width(3)
+    context.set_source_rgb(0, 255, 0)
+    context.move_to(MIN_X, MIN_Y)
+    context.line_to(MIN_X+(DPI/4), MIN_Y)
+    context.move_to(MIN_X, MIN_Y+DPI)
+    context.line_to(MIN_X+(DPI/4), MIN_Y+DPI)
+    context.move_to(MIN_X, MIN_Y+(DPI/2))
+    context.set_font_size(14)
+    context.show_text(f'1 inch = {DPI}px')
+    context.stroke()
+
+    # config params
+    context.set_source_rgb(0, 0, 0)
+    context.move_to(MIN_X, MIN_Y+(DPI*1.5))
+    context.show_text(f'{config.edo}EDO')
+    context.move_to(MIN_X, MIN_Y+(DPI*1.75))
+    context.show_text(f'{config.fretboard_length}" fretboard')
+    context.move_to(MIN_X, MIN_Y+(DPI*2))
+    context.show_text(f'{config.scale_length}" scale length')
+    context.stroke()
+
+
 def print_frets(config, outfilename):
     
     with cairo.SVGSurface(outfilename, WIDTH, HEIGHT) as surface:
         
         context = cairo.Context(surface)
 
-        # center line
-        context.set_line_width(1)
-        context.set_source_rgb(0, 0, 255)
-        context.move_to(CENTER_X, MIN_Y)
-        context.line_to(CENTER_X, MAX_Y)
-        context.stroke()
-
-        # one inch
-        context.set_line_width(3)
-        context.set_source_rgb(0, 255, 0)
-        context.move_to(MIN_X, MIN_Y)
-        context.line_to(MIN_X+(DPI/4), MIN_Y)
-        context.move_to(MIN_X, MIN_Y+DPI)
-        context.line_to(MIN_X+(DPI/4), MIN_Y+DPI)
-        context.move_to(MIN_X, MIN_Y+(DPI/2))
-        context.set_font_size(14)
-        context.show_text(f'1 inch = {DPI}px')
-        context.stroke()
-
-        # config params
-        context.set_source_rgb(0, 0, 0)
-        context.move_to(MIN_X, MIN_Y+(DPI*1.5))
-        context.show_text(f'{config.edo}EDO')
-        context.move_to(MIN_X, MIN_Y+(DPI*1.75))
-        context.show_text(f'{config.fretboard_length}" fretboard')
-        context.move_to(MIN_X, MIN_Y+(DPI*2))
-        context.show_text(f'{config.scale_length}" scale length')
-        context.stroke()
+        write_boilerplate(config, context)
 
         # 12edo frets
         context.set_line_width(1)
