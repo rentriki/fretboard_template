@@ -1,5 +1,7 @@
 {
   "edo" : 23,
   "fretboard_length" : 25.5,
-  "scale_length" : 34
+  "scale_length" : 34,
+  "width1" : 2.0625,
+  "width2" : 3.3125
 }

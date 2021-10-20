@@ -1,4 +1,5 @@
 import json
+import math
 import os
 
 from dataclasses import dataclass
@@ -20,6 +21,8 @@ class FretboardConfig:
     edo: float
     fretboard_length: float
     scale_length: float
+    width1: float
+    width2: float
 
 def read_config(infilename):
     with open(infilename) as infile:
@@ -32,6 +35,7 @@ def fret_spacing(fret_num, config):
     return config.scale_length * (1 - 2**(-fret_num/config.edo))
 
 def all_frets(config):
+    # in inches
     i = 0
     fret = fret_spacing(i, config)
     while fret < config.fretboard_length:
@@ -39,10 +43,34 @@ def all_frets(config):
         i += 1
         fret = fret_spacing(i, config)
 
+def sine_wave(fret_pos, config):
+    x = math.radians(360*fret_pos/(config.scale_length/2))
+    return math.sin(x)
+
+def fretboard_width(fret_pos, config):
+    return config.width1 + ((config.width2-config.width1) * 
+                           (fret_pos/config.fretboard_length))
+
+def x_pos(fret_pos, config):
+    return sine_wave(fret_pos, config) * (fretboard_width(fret_pos, config)/2)
+
+def all_frets_with_sine_wave(config):
+    # in inches
+    i = 0
+    fret = fret_spacing(i, config)
+    x = x_pos(fret, config)
+    while fret < config.fretboard_length:
+        yield fret, x
+        i += 1
+        fret = fret_spacing(i, config)
+        x = x_pos(fret, config)
+
 def write_frets(context, frets, line_length):
-    for (fret_num, y) in frets:
+    for (fret_num, (y, x)) in frets:
         context.move_to(CENTER_X-(line_length/2), MIN_Y+y*DPI)
         context.line_to(CENTER_X+(line_length/2), MIN_Y+y*DPI)
+        context.move_to(CENTER_X+(x*DPI), MIN_Y+y*DPI-2)
+        context.line_to(CENTER_X+(x*DPI), MIN_Y+y*DPI+2)
         context.move_to(CENTER_X-(line_length/2)-(DPI/4), 
                         MIN_Y+(y*DPI)+(DPI/4))
         context.show_text(str(fret_num))
@@ -51,15 +79,15 @@ def paginate_frets(target, baseline):
     target, baseline = map(lambda x: list(enumerate(x)), [target, baseline])
     while len(target) > 1:
         i, j = 0, 0
-        while (i < len(target)) and (target[i][1]*DPI < MAX_Y):
+        while (i < len(target)) and (target[i][1][0]*DPI < MAX_Y):
             i += 1
-        while (j < len(baseline)) and baseline[j][1]*DPI < MAX_Y:
+        while (j < len(baseline)) and baseline[j][1][0]*DPI < MAX_Y:
             j += 1
         yield (target[:i], baseline[:j])
-        snip = target[i-1][1]
-        target = [[fret_num, y-snip] for fret_num, y in target[i-1:]]
-        baseline = [[fret_num, y-snip] for fret_num, y in baseline 
-                                       if y-snip > 0]
+        snip = target[i-1][1][0]
+        target = [[fret_num, (y-snip, x)] for fret_num, (y, x) in target[i-1:]]
+        baseline = [[fret_num, (y-snip, x)] for fret_num, (y, x) in baseline 
+                                            if y-snip > 0]
 
 def write_boilerplate(config, context):
 
@@ -96,9 +124,11 @@ def write_boilerplate(config, context):
 def print_frets(config, outdir):
     
     twelve_edo_config = FretboardConfig(12, config.fretboard_length,
-                                            config.scale_length)
-    twedo_frets = all_frets(twelve_edo_config)
-    target_frets = all_frets(config)
+                                            config.scale_length,
+                                            config.width1,
+                                            config.width2)
+    twedo_frets = all_frets_with_sine_wave(twelve_edo_config)
+    target_frets = all_frets_with_sine_wave(config)
     
     for (page_num, (target, baseline)) in enumerate(paginate_frets(target_frets, 
                                                     twedo_frets), start=1):
